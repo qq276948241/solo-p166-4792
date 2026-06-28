@@ -1,0 +1,6 @@
+production:
+  cron:
+    "0 20 * * 3":
+      class: WeeklyBoxLockJob
+      queue: default
+      description: "每周三晚20:00锁定下周盲盒并生成订单"

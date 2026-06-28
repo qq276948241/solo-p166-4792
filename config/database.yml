@@ -1,0 +1,31 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: localhost
+  port: 5432
+  username: postgres
+  password: <%= ENV.fetch("PGPASSWORD", "postgres") %>
+
+development:
+  <<: *default
+  database: veggie_box_development
+
+test:
+  <<: *default
+  database: veggie_box_test
+
+production:
+  primary: &primary_production
+    <<: *default
+    database: veggie_box_production
+    username: <%= ENV["VEGGIE_BOX_DATABASE_USERNAME"] %>
+    password: <%= ENV["VEGGIE_BOX_DATABASE_PASSWORD"] %>
+  cache:
+    <<: *primary_production
+    database: veggie_box_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: veggie_box_production_queue
+    migrations_paths: db/queue_migrate
