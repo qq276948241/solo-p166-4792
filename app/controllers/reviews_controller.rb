@@ -1,13 +1,21 @@
 class ReviewsController < ApplicationController
   def create
-    review = current_user.reviews.new(review_params)
-    review.order_id = review.order_item.order_id
-    review.vegetable_id = review.order_item.vegetable_id
+    order_item = current_user.orders.flat_map(&:order_items).find_by(id: review_params[:order_item_id])
+    unless order_item
+      return error(message: "订单项不存在", code: 404, status: :not_found)
+    end
 
-    if review.save
-      success(review, message: "评价成功")
+    creator = ReviewCreator.create(
+      user: current_user,
+      order_item: order_item,
+      rating: review_params[:rating],
+      comment: review_params[:comment]
+    )
+
+    if creator.success?
+      success(creator.review, message: "评价成功")
     else
-      error(message: review.errors.full_messages.join(", "), code: 422, status: :unprocessable_entity)
+      error(message: creator.error_message, code: creator.error_code, status: :unprocessable_entity)
     end
   end
 
@@ -31,18 +39,17 @@ class ReviewsController < ApplicationController
           next
         end
 
-        review = current_user.reviews.new(
+        creator = ReviewCreator.create(
+          user: current_user,
           order_item: order_item,
-          order: order,
-          vegetable: order_item.vegetable,
           rating: item[:rating],
           comment: item[:comment]
         )
 
-        if review.save
-          results << review
+        if creator.success?
+          results << creator.review
         else
-          errors << "#{order_item.vegetable_name_snapshot}: #{review.errors.full_messages.join(', ')}"
+          errors << "#{order_item.vegetable_name_snapshot}: #{creator.error_message}"
         end
       end
     end
