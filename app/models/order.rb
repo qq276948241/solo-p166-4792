@@ -3,6 +3,7 @@ class Order < ApplicationRecord
   belongs_to :user
   belongs_to :weekly_box
   has_many :order_items, dependent: :destroy
+  has_many :reviews, dependent: :destroy
 
   enum :status, { locked: 0, delivering: 1, signed: 2, cancelled: 3 }
 

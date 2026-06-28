@@ -10,11 +10,34 @@ class OrdersController < ApplicationController
   end
 
   def show
-    success(@order.as_json(include: [:weekly_box, :subscription, { order_items: { include: :vegetable } } ]).merge(address: @order.address_info), message: "获取成功")
+    order_items = @order.order_items.includes(:vegetable)
+    reviews_map = @order.reviews.where(user: current_user).index_by(&:order_item_id)
+    order_items_json = order_items.as_json(include: :vegetable).map do |item_json|
+      review = reviews_map[item_json["id"]]
+      item_json.merge(review: review ? review.as_json(only: [:id, :rating, :comment, :created_at]) : nil)
+    end
+
+    data = @order.as_json(include: [:weekly_box, :subscription]).merge(
+      address: @order.address_info,
+      order_items: order_items_json,
+      reviews: @order.reviews.where(user: current_user).as_json(include: { vegetable: { only: [:id, :name] } }, only: [:id, :rating, :comment, :vegetable_id, :order_item_id, :created_at]),
+      review_summary: {
+        rated_count: reviews_map.size,
+        total_items: order_items.size,
+        avg_rating: reviews_map.values.any? ? (reviews_map.values.sum(&:rating).to_f / reviews_map.values.size).round(2) : nil
+      }
+    )
+    success(data, message: "获取成功")
   end
 
   def items
-    success(@order.order_items.includes(:vegetable).as_json(include: :vegetable), message: "获取成功")
+    items = @order.order_items.includes(:vegetable)
+    reviews_map = @order.reviews.where(user: current_user).index_by(&:order_item_id)
+    result = items.as_json(include: :vegetable).map do |item_json|
+      review = reviews_map[item_json["id"]]
+      item_json.merge(review: review ? review.as_json(only: [:id, :rating, :comment, :created_at]) : nil)
+    end
+    success(result, message: "获取成功")
   end
 
   def sign

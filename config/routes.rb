@@ -59,5 +59,14 @@ Rails.application.routes.draw do
     get "dashboard", to: "admin#dashboard"
     get "users", to: "admin#users"
     post "users/:user_id/recharge", to: "admin#manual_recharge"
+    get "reviews", to: "reviews#admin_all"
+    delete "reviews/:id", to: "reviews#destroy"
+  end
+
+  resources :reviews, only: [:create, :destroy] do
+    collection do
+      post :batch_create
+      get :my_reviews
+    end
   end
 end

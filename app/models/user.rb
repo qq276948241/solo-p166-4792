@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_many :subscriptions, dependent: :destroy
   has_many :orders, dependent: :destroy
   has_many :wallet_transactions, dependent: :destroy
+  has_many :reviews, dependent: :destroy
 
   validates :phone, presence: true, uniqueness: true,
     format: { with: /\A1[3-9]\d{9}\z/, message: "手机号格式不正确" }
